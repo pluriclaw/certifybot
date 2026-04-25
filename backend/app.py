@@ -1,9 +1,16 @@
+from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
 from pydantic import BaseModel
 import random
 
 app = FastAPI(title="CertifyBot")
+
+BACKEND_DIR = Path(__file__).parent
+ROOT_DIR = BACKEND_DIR.parent
+LANDING_PAGE = ROOT_DIR / "landing.html"
+
 app.add_middleware(CORSMiddleware, allow_origins=["*"])
 
 DEMO_VENDORS = {
@@ -54,7 +61,8 @@ class ReviewRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "service": "CertifyBot", "version": "1.0"}
+    return FileResponse(LANDING_PAGE)
+
 
 @app.get("/api/vendors")
 def list_vendors():
