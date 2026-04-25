@@ -290,11 +290,25 @@
       }
     }
 
-    function submitWaitlist(e) {
+    async function submitWaitlist(e) {
       e.preventDefault();
-      const btn = e.target.querySelector('button');
-      btn.textContent = 'Added ✓';
-      btn.disabled = true;
+      const form = e.target;
+      const btn = form.querySelector('button');
+      const email = form.querySelector('input').value;
+      btn.textContent = 'Sending…';
+      try {
+        const res = await fetch(`${API}/api/waitlist`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email })
+        });
+        const data = await res.json();
+        btn.textContent = data.message === 'already_registered' ? 'Already on list ✓' : 'Added ✓';
+        btn.disabled = true;
+      } catch {
+        btn.textContent = 'Error — try again';
+        btn.disabled = false;
+      }
     }
 
     renderVendorList();

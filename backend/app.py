@@ -1,9 +1,11 @@
+import json
+import random
+from datetime import datetime, timezone
 from pathlib import Path
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
-from pydantic import BaseModel
-import random
+from pydantic import BaseModel, EmailStr
 
 app = FastAPI(title="CertifyBot")
 
@@ -95,3 +97,31 @@ def review_vendor(req: ReviewRequest):
             "flags": []
         }
     }
+# ── Waitlist ─────────────────────────────────────────────────────
+
+WAITLIST_FILE = BACKEND_DIR / "waitlist.json"
+
+def load_waitlist():
+    if not WAITLIST_FILE.exists():
+        return []
+    return json.loads(WAITLIST_FILE.read_text())
+
+def save_waitlist(entries):
+    WAITLIST_FILE.write_text(json.dumps(entries, indent=2, ensure_ascii=False))
+
+
+class WaitlistEntry(BaseModel):
+    email: str
+    company: str | None = None
+
+
+@app.post("/api/waitlist", status_code=201)
+def join_waitlist(entry: WaitlistEntry):
+    waitlist = load_waitlist()
+    for existing in waitlist:
+        if existing["email"] == entry.email:
+            return {"message": "already_registered", "email": entry.email}
+    record = {"email": entry.email, "company": entry.company or "", "joined_at": datetime.now().isoformat()}
+    waitlist.append(record)
+    save_waitlist(waitlist)
+    return {"message": "added", "email": entry.email, "count": len(waitlist)}
